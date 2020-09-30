@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import tk.mybatis.mapper.entity.Condition;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -25,6 +27,8 @@ public abstract class AbstractService<T> implements Service<T> {
     }
 
     public void save(T model) {
+        //自动填充字段
+        fieldAutoFillin(model);
         mapper.insertSelective(model);
     }
 
@@ -71,5 +75,19 @@ public abstract class AbstractService<T> implements Service<T> {
 
     public List<T> findAll() {
         return mapper.selectAll();
+    }
+
+    public void fieldAutoFillin(T model){
+        try {
+            Integer currTimestamp = (int) (new Date().getTime() / 1000);
+            Method setCreateTime = modelClass.getDeclaredMethod("setCreateTime", Integer.class);
+            setCreateTime.invoke(model, currTimestamp);
+            Method setUpdateTime = modelClass.getDeclaredMethod("setUpdateTime", Integer.class);
+            setUpdateTime.invoke(model, currTimestamp);
+            Method setIsDeleted = modelClass.getDeclaredMethod("setIsDeleted", Byte.class);
+            setIsDeleted.invoke(model, Service.DELETED_NO);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+        }
     }
 }
